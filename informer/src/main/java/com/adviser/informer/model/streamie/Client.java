@@ -1,34 +1,34 @@
 package com.adviser.informer.model.streamie;
 
 import java.io.Serializable;
-import java.sql.Date;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 import lombok.Data;
 
-import org.codehaus.jackson.map.annotate.JsonDeserialize;
-
-import com.adviser.informer.model.DateDeserializer;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.codehaus.jackson.annotate.JsonProperty;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown=true/*,value={"created_at"}*/)
 public class Client implements Serializable {
 
   private static final long serialVersionUID = 743055082362827935L;
 
-
-  transient private UpdateTraffic updateTraffic;
-  public void setUpdateTraffic(UpdateTraffic _updateTraffic) {
-    updateTraffic = _updateTraffic;
-  }
   private String ipv4;
   private String hwaddr;
   private String useragent;
-  @JsonDeserialize(using = DateDeserializer.class)
-  private Date created_at;
-  private History history;
-  public History getHistory() {
-    if (history == null) {
-      history = new History();
+  
+  private List<String> accessPoints;
+  public List<String> getAccessPoints() {
+    if (accessPoints == null) {
+      accessPoints = new LinkedList<String>();
     }
-    return history;
+    return accessPoints;
   }
+  //@JsonDeserialize(using = DateDeserializer.class)
+  //@JsonDeserialize(using = ISO8601DateDeserializer.class)
+  @JsonProperty("created_at")
+  private Date createdAt;
 }

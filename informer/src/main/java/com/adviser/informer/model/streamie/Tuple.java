@@ -11,7 +11,18 @@ public class Tuple implements Serializable {
     timestamp = _timestamp;
   }
 
-  public long timestamp;
+  public void add(Tuple tuple) {
+    inAmount += tuple.inAmount;
+    outAmount += tuple.outAmount;
+  }
+  public long[] asArray() {
+    long[] ret = new long[3];
+    ret[0] = timestamp;
+    ret[1] = inAmount;
+    ret[2] = outAmount;
+    return ret;
+  }
+  public final long timestamp;
   public long inAmount = 0;
   public long outAmount = 0;
 }

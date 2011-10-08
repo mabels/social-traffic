@@ -43,15 +43,19 @@ public class Traffics extends Observable implements Runnable {
       try {
         while (true) {
           final DocumentChange dc = q.take();
-          if (true || dc.getId().compareTo("2011-05-03.181301") < 0) {
+          if (true) /* || dc.getId().compareTo("2011-05-02.133001") < 0) */ {
             if (dc.isDeleted()) {
               throw new RuntimeException("traffic could not deleted");
             } else {
-              final Traffic traffic = db.get(Traffic.class, dc.getId());
-              streamies.add(traffic);
+              try {
+                final Traffic traffic = db.get(Traffic.class, dc.getId());
+                streamies.add(traffic);
+              } catch (Exception e) {
+                System.out.println("Traffics:ERROR:"+e.getMessage()+":"+dc.getId());
+              }
             }
           }
-          //System.out.println("Traffics:" + dc.getId());
+          // System.out.println("Traffics:" + dc.getId());
           c.done(dc.getSequence());
         }
       } catch (Exception e) {
@@ -96,6 +100,11 @@ public class Traffics extends Observable implements Runnable {
       }
     };
 
+    new Thread(new Fetchers(q, c)).start();
+    new Thread(new Fetchers(q, c)).start();
+    new Thread(new Fetchers(q, c)).start();
+    new Thread(new Fetchers(q, c)).start();
+    new Thread(new Fetchers(q, c)).start();
     new Thread(new Fetchers(q, c)).start();
     new Thread(new Fetchers(q, c)).start();
     new Thread(new Fetchers(q, c)).start();
