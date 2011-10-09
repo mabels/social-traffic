@@ -3,6 +3,7 @@ package com.adviser.informer.model.streamie;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -11,14 +12,14 @@ import lombok.Getter;
 public class AggregatedHistory implements Serializable{
   private static final long serialVersionUID = -3072716493928195083L;
   @Getter
-  private final LinkedList<long[]> shortTerm;
+  private final List<long[]> shortTerm;
   @Getter
-  private final LinkedList<long[]> longTerm;
+  private final List<long[]> longTerm;
   public AggregatedHistory(History history) {
     longTerm = aggregate(history.getTraffic(), 10*60, 24*6*2);
     shortTerm = aggregate(history.getTraffic(), 60, 2*60);    
   }
-  private LinkedList<long[]> aggregate(LinkedList<Tuple> in, long slot, long deep) {   
+  private List<long[]> aggregate(LinkedList<Tuple> in, long slot, long deep) {   
     final Map<Long, Tuple> tmp = new TreeMap<Long, Tuple>(); 
     Iterator<Tuple> i = in.iterator();
     while(i.hasNext()) {
@@ -40,7 +41,7 @@ public class AggregatedHistory implements Serializable{
     LinkedList<long[]> ret = new LinkedList<long[]>();
     i = tmp.values().iterator();
     
-    while (--deep >= 0 && i.hasNext()) {
+    while ((--deep) >= 0 && i.hasNext()) {
       ret.add(i.next().asArray());
     }
     return ret;

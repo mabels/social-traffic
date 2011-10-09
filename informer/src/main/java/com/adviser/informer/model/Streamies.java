@@ -27,7 +27,7 @@ import com.adviser.informer.model.streamie.TrafficContainer;
 import com.adviser.informer.model.traffic.IpTuple;
 import com.adviser.informer.model.traffic.Traffic;
 
-public class Streamies extends Observable implements Runnable {
+public final class Streamies extends Observable implements Runnable {
 
   public static final int INITIALIZE = 1;
 
@@ -36,8 +36,8 @@ public class Streamies extends Observable implements Runnable {
 
     private final Map<String, StreamieContainer> ids;
 
-    public ByTraffic(Map<String, StreamieContainer> _ids) {
-      ids = _ids;
+    public ByTraffic(Map<String, StreamieContainer> ids) {
+      this.ids = ids;
     }
 
     private PriorityQueue<StreamieContainer> traffic = null;
@@ -170,12 +170,12 @@ public class Streamies extends Observable implements Runnable {
 
   private class Fetchers implements Runnable {
 
-    private BlockingQueue<DocumentChange> q;
-    private Completed c;
+    private final BlockingQueue<DocumentChange> q;
+    private final Completed c;
 
-    public Fetchers(BlockingQueue<DocumentChange> _q, Completed _c) {
-      q = _q;
-      c = _c;
+    public Fetchers(BlockingQueue<DocumentChange> q, Completed c) {
+      this.q = q;
+      this.c = c;
     }
 
     public void run() {
@@ -204,8 +204,8 @@ public class Streamies extends Observable implements Runnable {
 
     private long last = 0;
 
-    public Completed(long _last) {
-      last = _last;
+    public Completed(long last) {
+      this.last = last;
     }
 
     public void done(long seq) {

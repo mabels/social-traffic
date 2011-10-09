@@ -14,9 +14,9 @@ public class History implements Serializable, Total {
   private LinkedList<Tuple> traffic = new LinkedList<Tuple>();
 
   @Getter
-  transient private long inTotal = 0;
+  private transient long inTotal = 0;
   @Getter
-  transient private long outTotal = 0;
+  private transient long outTotal = 0;
   
   private Tuple addTraffic(Tuple tuple, long inAmount, long outAmount) {
     tuple.inAmount += inAmount;

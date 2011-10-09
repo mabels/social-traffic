@@ -11,16 +11,16 @@ import org.codehaus.jackson.map.deser.StdDeserializer.IntegerDeserializer;
 public class IpTuple implements Serializable {
   private static final long serialVersionUID = -7389405833651561486L;
 
-  String srcIP;
-  String dstIP;
-  String prot;
+  private String srcIP;
+  private String dstIP;
+  private String prot;
   @JsonDeserialize(using = IntegerDeserializer.class)
-  Integer srcPort;
+  private Integer srcPort;
   @JsonDeserialize(using = IntegerDeserializer.class)
-  Integer dstPort;
+  private Integer dstPort;
   @JsonDeserialize(using = IntegerDeserializer.class)
-  Integer octets;
+  private Integer octets;
   @JsonDeserialize(using = IntegerDeserializer.class)
-  Integer packets;
+  private Integer packets;
 
 }

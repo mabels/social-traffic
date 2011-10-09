@@ -13,12 +13,12 @@ import org.ektorp.impl.StdCouchDbConnector;
 import com.adviser.informer.model.Streamies.Completed;
 import com.adviser.informer.model.traffic.Traffic;
 
-public class Traffics extends Observable implements Runnable {
+public final class Traffics extends Observable implements Runnable {
 
   private Streamies streamies = null;
 
-  private Traffics(Streamies _streamies) {
-    streamies = _streamies;
+  private Traffics(Streamies streamies) {
+    this.streamies = streamies;
   }
 
   public static Traffics init(Streamies streamies) {
@@ -32,9 +32,9 @@ public class Traffics extends Observable implements Runnable {
     private BlockingQueue<DocumentChange> q;
     private Completed c;
 
-    public Fetchers(BlockingQueue<DocumentChange> _q, Completed _c) {
-      q = _q;
-      c = _c;
+    public Fetchers(BlockingQueue<DocumentChange> q, Completed c) {
+      this.q = q;
+      this.c = c;
     }
 
     public void run() {
@@ -43,18 +43,19 @@ public class Traffics extends Observable implements Runnable {
       try {
         while (true) {
           final DocumentChange dc = q.take();
-          if (true) /* || dc.getId().compareTo("2011-05-02.133001") < 0) */ {
-            if (dc.isDeleted()) {
-              throw new RuntimeException("traffic could not deleted");
-            } else {
-              try {
-                final Traffic traffic = db.get(Traffic.class, dc.getId());
-                streamies.add(traffic);
-              } catch (Exception e) {
-                System.out.println("Traffics:ERROR:"+e.getMessage()+":"+dc.getId());
-              }
+          // if (true) /* || dc.getId().compareTo("2011-05-02.133001") < 0) */ {
+          if (dc.isDeleted()) {
+            throw new RuntimeException("traffic could not deleted");
+          } else {
+            try {
+              final Traffic traffic = db.get(Traffic.class, dc.getId());
+              streamies.add(traffic);
+            } catch (Exception e) {
+              System.out.println("Traffics:ERROR:" + e.getMessage() + ":"
+                  + dc.getId());
             }
           }
+          // }
           // System.out.println("Traffics:" + dc.getId());
           c.done(dc.getSequence());
         }
@@ -79,7 +80,6 @@ public class Traffics extends Observable implements Runnable {
     final Traffics self = this;
     final Completed c = streamies.new Completed(feed.get(feed.size() - 1)
         .getSequence()) {
-
       @Override
       public void completed(long last) {
         System.out.println("Initial Read completed until:" + last);

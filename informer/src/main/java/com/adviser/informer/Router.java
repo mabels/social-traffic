@@ -34,8 +34,9 @@ public class Router extends RouteBuilder {
 
     public ListenAddress(String port, String addr) {
       this.port = port;
-      if (addr != null)
+      if (addr != null) {
         this.addr = addr;
+      }
     }
 
     public String toString() {
@@ -47,8 +48,8 @@ public class Router extends RouteBuilder {
 
   private Streamies streamies = null;
 
-  public Router(String[] args, Streamies _streamies) {
-    streamies = _streamies;
+  public Router(String[] args, Streamies streamies) {
+    this.streamies = streamies;
     if (args.length == 1) {
       listenaddress = new ListenAddress(args[0], null);
     } else if (args.length >= 2) {
@@ -63,35 +64,36 @@ public class Router extends RouteBuilder {
   }
 
   public void configure() {
+    final String restlet = "restlet:http://";
     System.out.println("Version:" + getServer());
     System.out.println("Listen On:" + listenaddress.toString());
     from(
-        "restlet:http://" + listenaddress.toString()
+        restlet + listenaddress.toString()
             + "/traffic/byTwitter/{screenName}?restletMethods=get").bean(this,
         "byTwitter");
     from(
-        "restlet:http://" + listenaddress.toString()
+        restlet + listenaddress.toString()
             + "/traffic/top10?restletMethods=get").bean(this, "top10");
     from(
-        "restlet:http://" + listenaddress.toString()
+        restlet + listenaddress.toString()
             + "/traffic/total/{screenName}?restletMethods=get").bean(this, "totalByScreenName");
     from(
-        "restlet:http://" + listenaddress.toString()
+        restlet + listenaddress.toString()
             + "/traffic/total?restletMethods=get").bean(this, "total");
     from(
-        "restlet:http://" + listenaddress.toString()
+        restlet + listenaddress.toString()
             + "/streamies?restletMethods=get").bean(this, "streamies");
   }
 
-  private String _version = null;
+  private String version = null;
 
   private String getServer() {
-    if (_version != null) {
-      return _version;
+    if (version != null) {
+      return version;
     }
     synchronized (this) {
-      if (_version != null) {
-        return _version;
+      if (version != null) {
+        return version;
       }
       String version = "Informer(development)";
       final InputStream is = Router.class.getClassLoader().getResourceAsStream(
@@ -109,9 +111,9 @@ public class Router extends RouteBuilder {
           // System.out.println("IS:"+e.getMessage());
         }
       }
-      _version = version;
+      this.version = version;
     }
-    return _version;
+    return version;
   }
 
  // private String _streamies;
@@ -142,8 +144,8 @@ public class Router extends RouteBuilder {
   }
   
   public void byTwitter(Exchange exchange) {
-    final Message _in = exchange.getIn();
-    final String screenName = _in.getHeader("screenName", String.class);
+    final Message in = exchange.getIn();
+    final String screenName = in.getHeader("screenName", String.class);
     final Message _out = exchange.getOut();
     _out.setHeader("Content-Type", "text/javascript");
     Streamie streamie = streamies.findByTwitter(screenName).getStreamie();
@@ -162,8 +164,8 @@ public class Router extends RouteBuilder {
   }
 
   public void total(Exchange exchange) {
-    final Message _out = exchange.getOut();
-    _out.setHeader("Content-Type", "text/javascript");
+    final Message out = exchange.getOut();
+    out.setHeader("Content-Type", "text/javascript");
     final Map<String, String> map = exchange.getIn()
         .getHeader("CamelRestletRequest", Request.class).getResourceRef()
         .getQueryAsForm().getValuesMap();
@@ -175,7 +177,7 @@ public class Router extends RouteBuilder {
       e.printStackTrace();
     }
     postJsonP(map, str);
-    _out.setBody(str.toString());
+    out.setBody(str.toString());
   }
   
   public void totalByScreenName(Exchange exchange) {
