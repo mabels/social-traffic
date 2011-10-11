@@ -3,7 +3,12 @@ package com.adviser.informer.model;
 import java.io.FileInputStream;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public abstract class Configuration {
+  private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
+
 
   private static Properties _properties = null;
 
@@ -26,9 +31,9 @@ public abstract class Configuration {
     final String fname = name + ".properties";
     try {
       _properties.load(new FileInputStream(fname));
-      System.out.println("loaded " + fname);
+      LOGGER.info("loaded " + fname);
     } catch (Exception e) {
-      System.err.println("load of " + fname + " failed:"+e.getMessage());
+      LOGGER.error("load of {} failed: {}", fname, e.getMessage());
     }
     return _properties;
   }

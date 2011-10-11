@@ -15,6 +15,8 @@ import org.apache.camel.Message;
 import org.apache.camel.builder.RouteBuilder;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.restlet.Request;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
 import com.adviser.informer.model.Streamies;
@@ -25,6 +27,9 @@ import com.adviser.informer.model.streamie.StreamieContainer;
 import com.adviser.informer.model.streamie.StreamieLocation;
 
 public class Router extends RouteBuilder {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(Router.class);
+
   public class ListenAddress {
     private String addr = "127.0.0.1";
     private String port = "2911";
@@ -65,8 +70,8 @@ public class Router extends RouteBuilder {
 
   public void configure() {
     final String restlet = "restlet:http://";
-    System.out.println("Version:" + getServer());
-    System.out.println("Listen On:" + listenaddress.toString());
+    LOGGER.info("Version: {}", getServer());
+    LOGGER.info("Listen On: {}", listenaddress.toString());
     from(
         restlet + listenaddress.toString()
             + "/traffic/byTwitter/{screenName}?restletMethods=get").bean(this,
@@ -76,13 +81,13 @@ public class Router extends RouteBuilder {
             + "/traffic/top10?restletMethods=get").bean(this, "top10");
     from(
         restlet + listenaddress.toString()
-            + "/traffic/total/{screenName}?restletMethods=get").bean(this, "totalByScreenName");
+            + "/traffic/total/{screenName}?restletMethods=get").bean(this,
+        "totalByScreenName");
     from(
         restlet + listenaddress.toString()
             + "/traffic/total?restletMethods=get").bean(this, "total");
-    from(
-        restlet + listenaddress.toString()
-            + "/streamies?restletMethods=get").bean(this, "streamies");
+    from(restlet + listenaddress.toString() + "/streamies?restletMethods=get")
+        .bean(this, "streamies");
   }
 
   private String version = null;
@@ -95,7 +100,7 @@ public class Router extends RouteBuilder {
       if (version != null) {
         return version;
       }
-      String version = "Informer(development)";
+      version = "Informer(development)";
       final InputStream is = Router.class.getClassLoader().getResourceAsStream(
           "META-INF/maven/com.adviser.informer/informer/pom.xml");
       if (is != null) {
@@ -108,62 +113,17 @@ public class Router extends RouteBuilder {
               + doc.getElementsByTagName("version").item(0).getTextContent()
               + ")";
         } catch (Exception e) {
+          LOGGER.error("Router error:", e);
           // System.out.println("IS:"+e.getMessage());
         }
       }
-      this.version = version;
     }
     return version;
   }
 
- // private String _streamies;
- // private long   _updateStreamies;
+  // private String _streamies;
+  // private long _updateStreamies;
   public void streamies(Exchange exchange) {
-    final Message _out = exchange.getOut();
-    _out.setHeader("Content-Type", "text/javascript");
-    final Map<String, String> map = exchange.getIn()
-    .getHeader("CamelRestletRequest", Request.class).getResourceRef()
-    .getQueryAsForm().getValuesMap();
-    StringWriter str = new StringWriter();
-    preJsonP(map, str);
-    try {
- //     if (_updateStreamies == null || (new _updateStreamies)
-      final LinkedList<StreamieLocation> ret = new LinkedList<StreamieLocation>();
-      final Iterator<StreamieContainer> i = streamies.getById().values().iterator();
-      while (i.hasNext()) {
-        final StreamieContainer sc = i.next();
-        ret.push(new StreamieLocation(sc.getStreamie()));
-      }
-      (new ObjectMapper()).writeValue(str, ret);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    postJsonP(map, str);
-    //System.out.println(str.toString());
-    _out.setBody(str.toString());
-  }
-  
-  public void byTwitter(Exchange exchange) {
-    final Message in = exchange.getIn();
-    final String screenName = in.getHeader("screenName", String.class);
-    final Message _out = exchange.getOut();
-    _out.setHeader("Content-Type", "text/javascript");
-    Streamie streamie = streamies.findByTwitter(screenName).getStreamie();
-    final Map<String, String> map = exchange.getIn()
-    .getHeader("CamelRestletRequest", Request.class).getResourceRef()
-    .getQueryAsForm().getValuesMap();
-    StringWriter str = new StringWriter();
-    preJsonP(map, str);
-    try {
-      (new ObjectMapper()).writeValue(str, streamie);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    postJsonP(map, str);
-    _out.setBody(str.toString());
-  }
-
-  public void total(Exchange exchange) {
     final Message out = exchange.getOut();
     out.setHeader("Content-Type", "text/javascript");
     final Map<String, String> map = exchange.getIn()
@@ -172,32 +132,86 @@ public class Router extends RouteBuilder {
     StringWriter str = new StringWriter();
     preJsonP(map, str);
     try {
-      (new ObjectMapper()).writeValue(str, new AggregatedHistory(streamies.getTotalTraffic()));
+      // if (_updateStreamies == null || (new _updateStreamies)
+      final LinkedList<StreamieLocation> ret = new LinkedList<StreamieLocation>();
+      final Iterator<StreamieContainer> i = streamies.getById().values()
+          .iterator();
+      while (i.hasNext()) {
+        final StreamieContainer sc = i.next();
+        ret.push(new StreamieLocation(sc.getStreamie()));
+      }
+      (new ObjectMapper()).writeValue(str, ret);
     } catch (Exception e) {
-      e.printStackTrace();
+      LOGGER.error("streamies:",e);
+    }
+    postJsonP(map, str);
+    // System.out.println(str.toString());
+    out.setBody(str.toString());
+  }
+
+  public static Map<String, String> getHeaders(Message in) {
+    return in.getHeader("CamelRestletRequest", Request.class).getResourceRef()
+        .getQueryAsForm().getValuesMap();
+  }
+
+  public void byTwitter(Exchange exchange) {
+    final Message in = exchange.getIn();
+    final String screenName = in.getHeader("screenName", String.class);
+    final Message out = exchange.getOut();
+    out.setHeader("Content-Type", "text/javascript");
+    Streamie streamie = streamies.findByTwitter(screenName).getStreamie();
+    final Map<String, String> map = getHeaders(in);
+    final StringWriter str = new StringWriter();
+    preJsonP(map, str);
+    try {
+      (new ObjectMapper()).writeValue(str, streamie);
+    } catch (Exception e) {
+      LOGGER.error("byTwitter:",e);
     }
     postJsonP(map, str);
     out.setBody(str.toString());
   }
-  
+
+  public void total(Exchange exchange) {
+    final Message out = exchange.getOut();
+    out.setHeader("Content-Type", "text/javascript");
+    final Map<String, String> map = getHeaders(exchange.getIn());
+    final StringWriter str = new StringWriter();
+    preJsonP(map, str);
+    try {
+      (new ObjectMapper()).writeValue(str,
+          new AggregatedHistory(streamies.getTotalTraffic()));
+    } catch (Exception e) {
+      LOGGER.error("total:",e);
+    }
+    postJsonP(map, str);
+    out.setBody(str.toString());
+  }
+
+  private static void contentTypeJavascript(Message out) {
+    out.setHeader("Content-Type", "text/javascript");
+  }
+
   public void totalByScreenName(Exchange exchange) {
-    final Message _out = exchange.getOut();
-    _out.setHeader("Content-Type", "text/javascript");
+    final Message out = exchange.getOut();
+    contentTypeJavascript(out);
     final Map<String, String> map = exchange.getIn()
         .getHeader("CamelRestletRequest", Request.class).getResourceRef()
         .getQueryAsForm().getValuesMap();
- 
-    final String screenName = exchange.getIn().getHeader("screenName", String.class);
+
+    final String screenName = exchange.getIn().getHeader("screenName",
+        String.class);
     StringWriter str = new StringWriter();
     preJsonP(map, str);
     try {
-     (new ObjectMapper()).writeValue(str, new AggregatedHistory(streamies.findByTwitter(screenName).getTrafficContainer().getTraffic()));
+      (new ObjectMapper()).writeValue(str, new AggregatedHistory(streamies
+          .findByTwitter(screenName).getTrafficContainer().getTraffic()));
     } catch (Exception e) {
-      e.printStackTrace();
+      LOGGER.error("totalByScreenName:",e);
     }
     postJsonP(map, str);
-    _out.setBody(str.toString());
-   }
+    out.setBody(str.toString());
+  }
 
   private void preJsonP(Map<String, String> map, StringWriter str) {
     final String callback = map.get("callback");
@@ -206,20 +220,24 @@ public class Router extends RouteBuilder {
       str.append("(");
     }
   }
+
   private void postJsonP(Map<String, String> map, StringWriter str) {
     final String callback = map.get("callback");
     if (callback != null) {
       str.append(")");
     }
   }
+
+  private final static int DEFAULT_TOP10 = 10;
+
   public void top10(Exchange exchange) {
-    final Message _out = exchange.getOut();
-    _out.setHeader("Content-Type", "text/javascript");
+    final Message out = exchange.getOut();
+    contentTypeJavascript(out);
     final Map<String, String> map = exchange.getIn()
         .getHeader("CamelRestletRequest", Request.class).getResourceRef()
         .getQueryAsForm().getValuesMap();
     final String o = map.get("count");
-    int count = 10;
+    int count = DEFAULT_TOP10;
     if (o != null) {
       count = Integer.parseInt(o);
     }
@@ -233,9 +251,9 @@ public class Router extends RouteBuilder {
     try {
       (new ObjectMapper()).writeValue(str, topItems);
     } catch (Exception e) {
-      e.printStackTrace();
+      LOGGER.error("top10:",e);
     }
     postJsonP(map, str);
-    _out.setBody(str.toString());
+    out.setBody(str.toString());
   }
 }

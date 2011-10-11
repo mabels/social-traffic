@@ -9,11 +9,15 @@ import org.ektorp.changes.ChangesCommand;
 import org.ektorp.changes.ChangesFeed;
 import org.ektorp.changes.DocumentChange;
 import org.ektorp.impl.StdCouchDbConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.adviser.informer.model.Streamies.Completed;
 import com.adviser.informer.model.traffic.Traffic;
 
 public final class Traffics extends Observable implements Runnable {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(Traffics.class);
 
   private Streamies streamies = null;
 
@@ -28,6 +32,8 @@ public final class Traffics extends Observable implements Runnable {
   }
 
   private class Fetchers implements Runnable {
+
+
 
     private BlockingQueue<DocumentChange> q;
     private Completed c;
@@ -51,8 +57,7 @@ public final class Traffics extends Observable implements Runnable {
               final Traffic traffic = db.get(Traffic.class, dc.getId());
               streamies.add(traffic);
             } catch (Exception e) {
-              System.out.println("Traffics:ERROR:" + e.getMessage() + ":"
-                  + dc.getId());
+              LOGGER.error("Traffics:ERROR: {}", dc.getId(), e);
             }
           }
           // }
@@ -60,7 +65,7 @@ public final class Traffics extends Observable implements Runnable {
           c.done(dc.getSequence());
         }
       } catch (Exception e) {
-        System.err.println("Error:Traffic:" + e.getMessage());
+        LOGGER.error("Error:Traffic:", e);
       }
 
     }
@@ -74,15 +79,14 @@ public final class Traffics extends Observable implements Runnable {
     final List<DocumentChange> feed = db.changes(cmd);
 
     q.addAll(feed);
-    System.out.println("Initial Read until len:" + feed.size() + ":"
-        + feed.get(feed.size() - 1).getSequence());
+    LOGGER.info("Initial Read until len: {} : {} ", feed.size(), feed.get(feed.size() - 1).getSequence());
 
     final Traffics self = this;
     final Completed c = streamies.new Completed(feed.get(feed.size() - 1)
         .getSequence()) {
       @Override
       public void completed(long last) {
-        System.out.println("Initial Read completed until:" + last);
+        LOGGER.info("Initial Read completed until: {}", last);
         final ChangesCommand cmd = new ChangesCommand.Builder().since(last)
             .build();
         final ChangesFeed feed = db.changesFeed(cmd);

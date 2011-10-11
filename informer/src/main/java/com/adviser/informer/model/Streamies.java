@@ -18,6 +18,8 @@ import org.ektorp.changes.ChangesCommand;
 import org.ektorp.changes.ChangesFeed;
 import org.ektorp.changes.DocumentChange;
 import org.ektorp.impl.StdCouchDbConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.adviser.informer.model.streamie.Client;
 import com.adviser.informer.model.streamie.History;
@@ -28,7 +30,12 @@ import com.adviser.informer.model.traffic.IpTuple;
 import com.adviser.informer.model.traffic.Traffic;
 
 public final class Streamies extends Observable implements Runnable {
+  private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
+  
+  private final static long MSECINSEC = 1000L;
+  private final static int SECPERMIN = 60;
+  private final static int RETRYSEC = 5;
   public static final int INITIALIZE = 1;
 
   private class ByTraffic implements Runnable, Serializable {
@@ -55,14 +62,14 @@ public final class Streamies extends Observable implements Runnable {
     }
 
     public void run() {
-      int timer = 5;
+      int timer = RETRYSEC;
       while (true) {
         try {
-          Thread.sleep(timer * 1000);
-          if (timer < 60) {
-            timer += 5;
+          Thread.sleep(timer * MSECINSEC);
+          if (timer < SECPERMIN) {
+            timer += RETRYSEC;
           }
-          System.out.println("Start TOP10");
+          LOGGER.info("Start TOP10");
           final PriorityQueue<StreamieContainer> tmp = new PriorityQueue<StreamieContainer>(
               ids.size(), new Comparator<StreamieContainer>() {
 
@@ -86,11 +93,10 @@ public final class Streamies extends Observable implements Runnable {
             final StreamieContainer tc = i.next();
             tmp.add(tc);
           }
-          System.out.println("Done TOP10");
+          LOGGER.debug("Done TOP10");
           traffic = tmp;
         } catch (InterruptedException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
+          LOGGER.error("TOP10:", e);
         }
 
       }
@@ -190,11 +196,11 @@ public final class Streamies extends Observable implements Runnable {
             final Streamie streamie = db.get(Streamie.class, dc.getId());
             add(streamie);
           }
-          System.out.println("Streamie:" + dc.getId());
+          LOGGER.info("Streamie:" + dc.getId());
           c.done(dc.getSequence());
         }
       } catch (Exception e) {
-        e.printStackTrace();
+        LOGGER.error("Streamie:", e);
       }
 
     }
@@ -247,7 +253,7 @@ public final class Streamies extends Observable implements Runnable {
       } else {
         inAmount = tuple.getOctets();
       }
-      final long timeStamp = traffic.getCreatedAt().getTime() / 1000L;
+      final long timeStamp = traffic.getCreatedAt().getTime() / MSECINSEC;
       // System.out.println(timeStamp);
       totalTraffic.add(timeStamp, inAmount, outAmount);
       streamie.getTrafficContainer().add(matchIp, timeStamp, inAmount, outAmount);
@@ -267,15 +273,14 @@ public final class Streamies extends Observable implements Runnable {
     final List<DocumentChange> feed = db.changes(cmd);
 
     q.addAll(feed);
-    System.out.println("Initial Read until len:" + feed.size() + ":"
-        + feed.get(feed.size() - 1).getSequence());
+    LOGGER.info("Initial Read until len: {}:{}", feed, feed.get(feed.size() - 1).getSequence());
 
     final Streamies self = this;
     final Completed c = new Completed(feed.get(feed.size() - 1).getSequence()) {
 
       @Override
       public void completed(long last) {
-        System.out.println("Initial Read completed until:" + last);
+        LOGGER.info("Initial Read completed until: {}", last);
         final ChangesCommand cmd = new ChangesCommand.Builder().since(last)
             .build();
         final ChangesFeed feed = db.changesFeed(cmd);

@@ -15,11 +15,14 @@ public class AggregatedHistory implements Serializable{
   private final List<long[]> shortTerm;
   @Getter
   private final List<long[]> longTerm;
+  private final static int MIN = 60;
+  private final static int MIN10 = MIN * 10;
+  
   public AggregatedHistory(History history) {
-    longTerm = aggregate(history.getTraffic(), 10*60, 24*6*2);
-    shortTerm = aggregate(history.getTraffic(), 60, 2*60);    
+    longTerm = aggregate(history.getTraffic(), MIN10, 24*6*2);
+    shortTerm = aggregate(history.getTraffic(), MIN, 2*MIN);    
   }
-  private List<long[]> aggregate(LinkedList<Tuple> in, long slot, long deep) {   
+  private List<long[]> aggregate(List<Tuple> in, long slot, long deep) {   
     final Map<Long, Tuple> tmp = new TreeMap<Long, Tuple>(); 
     Iterator<Tuple> i = in.iterator();
     while(i.hasNext()) {
