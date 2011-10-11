@@ -33,9 +33,9 @@ public final class Streamies extends Observable implements Runnable {
   private static final Logger LOGGER = LoggerFactory.getLogger(Configuration.class);
 
   
-  private final static long MSECINSEC = 1000L;
-  private final static int SECPERMIN = 60;
-  private final static int RETRYSEC = 5;
+  private static final long MSECINSEC = 1000L;
+  private static final int SECPERMIN = 60;
+  private static final int RETRYSEC = 5;
   public static final int INITIALIZE = 1;
 
   private class ByTraffic implements Runnable, Serializable {

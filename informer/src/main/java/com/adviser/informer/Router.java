@@ -126,9 +126,7 @@ public class Router extends RouteBuilder {
   public void streamies(Exchange exchange) {
     final Message out = exchange.getOut();
     out.setHeader("Content-Type", "text/javascript");
-    final Map<String, String> map = exchange.getIn()
-        .getHeader("CamelRestletRequest", Request.class).getResourceRef()
-        .getQueryAsForm().getValuesMap();
+    final Map<String, String> map = getHeaders(exchange.getIn());
     StringWriter str = new StringWriter();
     preJsonP(map, str);
     try {
@@ -195,9 +193,7 @@ public class Router extends RouteBuilder {
   public void totalByScreenName(Exchange exchange) {
     final Message out = exchange.getOut();
     contentTypeJavascript(out);
-    final Map<String, String> map = exchange.getIn()
-        .getHeader("CamelRestletRequest", Request.class).getResourceRef()
-        .getQueryAsForm().getValuesMap();
+    final Map<String, String> map = getHeaders(exchange.getIn());
 
     final String screenName = exchange.getIn().getHeader("screenName",
         String.class);
@@ -228,14 +224,12 @@ public class Router extends RouteBuilder {
     }
   }
 
-  private final static int DEFAULT_TOP10 = 10;
+  private static final int DEFAULT_TOP10 = 10;
 
   public void top10(Exchange exchange) {
     final Message out = exchange.getOut();
     contentTypeJavascript(out);
-    final Map<String, String> map = exchange.getIn()
-        .getHeader("CamelRestletRequest", Request.class).getResourceRef()
-        .getQueryAsForm().getValuesMap();
+    final Map<String, String> map = getHeaders(exchange.getIn());
     final String o = map.get("count");
     int count = DEFAULT_TOP10;
     if (o != null) {

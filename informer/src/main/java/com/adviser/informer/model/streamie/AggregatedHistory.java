@@ -9,15 +9,19 @@ import java.util.TreeMap;
 
 import lombok.Getter;
 
-public class AggregatedHistory implements Serializable{
+public final class AggregatedHistory implements Serializable{
   private static final long serialVersionUID = -3072716493928195083L;
   @Getter
   private final List<long[]> shortTerm;
   @Getter
   private final List<long[]> longTerm;
-  private final static int MIN = 60;
-  private final static int MIN10 = MIN * 10;
-  
+  private static final int MIN = 60;
+  private static final int MIN10 = MIN * 10;
+  /*
+  private AggregatedHistory() {
+    shortTerm = longTerm = null;
+  }
+  */
   public AggregatedHistory(History history) {
     longTerm = aggregate(history.getTraffic(), MIN10, 24*6*2);
     shortTerm = aggregate(history.getTraffic(), MIN, 2*MIN);    
